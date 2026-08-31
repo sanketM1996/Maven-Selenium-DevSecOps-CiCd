@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Todo App</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="todo-card">
+
+        <div class="header">
+
+            <h1>My Todo List</h1>
+
+            <p>
+                Stay organized and get things done.
+            </p>
+
+        </div>
+
+
+        <!-- Add Todo -->
+
+        <form class="add-form"
+              th:action="@{/todos}"
+              method="post">
+
+            <input
+                    type="text"
+                    name="title"
+                    placeholder="What needs to be done?"
+                    autocomplete="off"
+                    required
+            >
+
+            <button type="submit">
+                Add Todo
+            </button>
+
+        </form>
+
+
+        <!-- Todo List -->
+
+        <div class="todo-list">
+
+            <div
+                    class="todo-item"
+                    th:each="todo : ${todos}"
+                    th:classappend="${todo.completed} ? ' completed' : ''"
+            >
+
+                <div class="todo-content">
+
+                    <!-- Toggle -->
+
+                    <form
+                            th:action="@{/todos/{id}/toggle(id=${todo.id})}"
+                            method="post"
+                    >
+
+                        <button
+                                type="submit"
+                                class="check-button"
+                        >
+
+                            <span
+                                    th:if="${todo.completed}">
+                                ✓
+                            </span>
+
+                            <span
+                                    th:unless="${todo.completed}">
+                                ○
+                            </span>
+
+                        </button>
+
+                    </form>
+
+
+                    <!-- Title -->
+
+                    <span
+                            class="todo-title"
+                            th:text="${todo.title}"
+                    >
+                        Todo
+                    </span>
+
+                </div>
+
+
+                <!-- Delete -->
+
+                <form
+                        th:action="@{/todos/{id}/delete(id=${todo.id})}"
+                        method="post"
+                >
+
+                    <button
+                            type="submit"
+                            class="delete-button"
+                    >
+                        Delete
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- Empty state -->
+
+            <div
+                    class="empty"
+                    th:if="${#lists.isEmpty(todos)}"
+            >
+
+                <p>🎉 No todos yet!</p>
+
+                <span>
+                    Add something you want to accomplish.
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
