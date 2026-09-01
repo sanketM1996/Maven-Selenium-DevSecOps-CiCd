@@ -16,10 +16,17 @@ pipeline {
                     sh '''
                         set -e
 
+                        echo "===== JAVA ====="
                         java -version
+
+                        echo "===== MAVEN ====="
                         chmod +x mvnw
                         ./mvnw -version
+
+                        echo "===== POM ====="
                         test -f pom.xml
+
+                        echo "✅ Validation successful"
                     '''
                 }
             }
@@ -32,7 +39,11 @@ pipeline {
                     steps {
                         sh '''
                             set -e
+
+                            echo "===== GITLEAKS ====="
                             gitleaks detect --source . --redact
+
+                            echo "✅ Gitleaks passed"
                         '''
                     }
                 }
@@ -43,11 +54,13 @@ pipeline {
                             sh '''
                                 set -e
 
-                                echo ">>> Maven"
-                                mvn -version
+                                echo "===== OWASP DEPENDENCY CHECK ====="
 
-                                echo ">>> OWASP Dependency Check"
-                                mvn org.owasp:dependency-check-maven:check
+                                chmod +x mvnw
+
+                                ./mvnw -version
+
+                                ./mvnw org.owasp:dependency-check-maven:check
 
                                 echo "✅ Dependency scan completed"
                             '''
@@ -59,7 +72,12 @@ pipeline {
                     steps {
                         sh '''
                             set -e
+
+                            echo "===== CHECKOV ====="
+
                             checkov -d .
+
+                            echo "✅ Checkov passed"
                         '''
                     }
                 }
