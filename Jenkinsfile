@@ -6,6 +6,10 @@ pipeline {
         maven 'MAVEN'
     }
 
+    environment {
+        APP_DIR = 'todo-app'
+    }
+
     stages {
 
         stage('Checkout Code') {
@@ -17,14 +21,15 @@ pipeline {
 
         stage('Validate') {
             steps {
-                dir('todo-app') {
-                    sh '''
-                        set -e
-                        java -version
-                        mvn -version
-                        test -f pom.xml
-                    '''
-                }
+                sh '''
+                    set -e
+
+                    cd "$APP_DIR"
+
+                    java -version
+                    mvn -version
+                    test -f pom.xml
+                '''
             }
         }
 
@@ -35,6 +40,7 @@ pipeline {
                     steps {
                         sh '''
                             set -e
+
                             gitleaks dir . --redact
                         '''
                     }
@@ -44,11 +50,12 @@ pipeline {
                     steps {
                         sh '''
                             set -e
+
                             trivy fs \
                                 --scanners vuln \
                                 --severity HIGH,CRITICAL \
                                 --exit-code 1 \
-                                todo-app/
+                                "$APP_DIR"
                         '''
                     }
                 }
@@ -57,6 +64,7 @@ pipeline {
                     steps {
                         sh '''
                             set -e
+
                             checkov -d .
                         '''
                     }
@@ -66,15 +74,43 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                dir('todo-app') {
-                    sh 'mvn -B clean verify'
-                }
+                sh '''
+                    set -e
+
+                    cd "$APP_DIR"
+
+                    mvn -B clean verify
+                '''
             }
 
             post {
                 always {
                     junit 'todo-app/target/surefire-reports/*.xml'
                 }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                sh '''
+                    set -e
+
+                    cd "$APP_DIR"
+
+                    mvn -B package -DskipTests
+                '''
+            }
+        }
+
+        stage('SBOM') {
+            steps {
+                sh '''
+                    set -e
+
+                    cd "$APP_DIR"
+
+                    mvn -B org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+                '''
             }
         }
     }
