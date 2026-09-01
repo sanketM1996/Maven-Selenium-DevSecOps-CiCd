@@ -27,15 +27,14 @@ pipeline {
         stage('Security Scans') {
             parallel {
 
-                stage('Gitleaks') {
-                    steps {
-                        sh '''
-                            set -e
-                            gitleaks detect --source . --redact
-                        '''
-                    }
-                }
-
+        stage('Gitleaks') {
+                 steps {
+                     sh '''
+                       set -e
+                      gitleaks dir . --redact
+                     '''
+                 }
+            }
                 stage('Trivy Dependency Scan') {
                     steps {
                         sh '''
