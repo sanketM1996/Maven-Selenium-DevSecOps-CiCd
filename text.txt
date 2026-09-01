@@ -1,0 +1,8 @@
+
+prerequisites 
+plugin:-Eclipse Temurin installer
+        Maven Integration plugin
+
+software:-trivy
+          Checkov
+          Gitleaks
