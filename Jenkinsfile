@@ -10,11 +10,12 @@ pipeline {
         }
          stage('Validate') {
             steps {
-                sh '''
+              dir('todo-app') {
+               sh '''
                     java -version
                     ./mvnw -version
                     test -f pom.xml
-                '''
+                '''}
             }
         }
 
