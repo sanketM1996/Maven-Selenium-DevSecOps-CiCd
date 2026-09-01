@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'MAVEN'
+    }
+
     stages {
 
         stage('Checkout Code') {
@@ -16,8 +20,7 @@ pipeline {
                     sh '''
                         set -e
                         java -version
-                        chmod +x mvnw
-                        ./mvnw -version
+                        mvn -version
                         test -f pom.xml
                     '''
                 }
@@ -27,14 +30,15 @@ pipeline {
         stage('Security Scans') {
             parallel {
 
-        stage('Gitleaks') {
-                 steps {
-                     sh '''
-                       set -e
-                      gitleaks dir . --redact
-                     '''
-                 }
-            }
+                stage('Gitleaks') {
+                    steps {
+                        sh '''
+                            set -e
+                            gitleaks dir . --redact
+                        '''
+                    }
+                }
+
                 stage('Trivy Dependency Scan') {
                     steps {
                         sh '''
@@ -55,6 +59,20 @@ pipeline {
                             checkov -d .
                         '''
                     }
+                }
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                dir('todo-app') {
+                    sh 'mvn -B clean verify'
+                }
+            }
+
+            post {
+                always {
+                    junit 'todo-app/target/surefire-reports/*.xml'
                 }
             }
         }
