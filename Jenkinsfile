@@ -1,15 +1,11 @@
 pipeline {
     agent any
 
-    // environment {
-    //     // Add variables here if needed, like GIT_REPO = 'https://...'
-    // }
 
     stages {
-        stage('Stage 1 - Name Here') {
+        stage('Checkout Code') {
             steps {
-                echo "🛠️ Step description here"
-                // Commands here (e.g., git, sh, etc.)
+                git branch: 'main', url: 'https://github.com/sanketM1996/Maven-Selenium-DevSecOps-CiCd.git'
             }
         }
 
@@ -19,8 +15,7 @@ pipeline {
                 // Commands here
             }
         }
-
-        // ➕ Add more stages as needed
+ // ➕ Add more stages as needed
     }
 
     post {
