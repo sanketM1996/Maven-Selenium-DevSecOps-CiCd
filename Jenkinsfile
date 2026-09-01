@@ -8,14 +8,16 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/sanketM1996/Maven-Selenium-DevSecOps-CiCd.git'
             }
         }
-
-        stage('Stage 2 - Name Here') {
+         stage('Validate') {
             steps {
-                echo "🔍 Step description here"
-                // Commands here
+                sh '''
+                    java -version
+                    ./mvnw -version
+                    test -f pom.xml
+                '''
             }
         }
- // ➕ Add more stages as needed
+
     }
 
     post {
