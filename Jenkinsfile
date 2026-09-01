@@ -32,57 +32,51 @@ pipeline {
             }
         }
 
-        stage('Security Scans') {
-            parallel {
+       stage('Security Scans') {
+    parallel {
 
-                stage('Gitleaks') {
-                    steps {
-                        sh '''
-                            set -e
-
-                            echo "===== GITLEAKS ====="
-                            gitleaks detect --source . --redact
-
-                            echo "✅ Gitleaks passed"
-                        '''
-                    }
-                }
-
-                stage('Dependency Scan') {
-                    steps {
-                        dir('todo-app') {
-                            sh '''
-                                set -e
-
-                                echo "===== OWASP DEPENDENCY CHECK ====="
-
-                                chmod +x mvnw
-
-                                ./mvnw -version
-
-                                ./mvnw org.owasp:dependency-check-maven:check
-
-                                echo "✅ Dependency scan completed"
-                            '''
-                        }
-                    }
-                }
-
-                stage('Checkov') {
-                    steps {
-                        sh '''
-                            set -e
-
-                            echo "===== CHECKOV ====="
-
-                            checkov -d .
-
-                            echo "✅ Checkov passed"
-                        '''
-                    }
-                }
+        stage('Gitleaks') {
+            steps {
+                sh '''
+                    set -e
+                    gitleaks detect --source . --redact
+                '''
             }
         }
+
+        stage('Trivy Dependency Scan') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "===== TRIVY DEPENDENCY SCAN ====="
+
+                    trivy fs \
+                        --scanners vuln \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 1 \
+                        todo-app/
+
+                    echo "✅ Dependency vulnerability scan passed"
+                '''
+            }
+        }
+
+        stage('Checkov') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "===== CHECKOV ====="
+
+                    checkov -d .
+
+                    echo "✅ Checkov passed"
+                '''
+            }
+        }
+    }
+}
     }
 
     post {
