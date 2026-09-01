@@ -18,8 +18,31 @@ pipeline {
                 '''}
             }
         }
+                stage('Security Scans') {
+            parallel {
+
+                stage('Gitleaks') {
+                    steps {
+                        sh 'gitleaks detect --source . --redact'
+                    }
+                }
+
+                stage('Dependency Scan') {
+                    steps {
+                        sh './mvnw org.owasp:dependency-check-maven:check'
+                    }
+                }
+
+                stage('Checkov') {
+                    steps {
+                        sh 'checkov -d .'
+                    }
+                }
+            }
+        }
 
     }
+
 
     post {
         success {
