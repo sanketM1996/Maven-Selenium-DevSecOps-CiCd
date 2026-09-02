@@ -113,6 +113,40 @@ pipeline {
                 '''
             }
         }
+        stage('Docker Build') {
+    steps {
+        script {
+            env.IMAGE_TAG = sh(
+                script: 'git rev-parse --short=12 HEAD',
+                returnStdout: true
+            ).trim()
+        }
+
+        sh '''
+            docker build \
+                -t $DOCKER_IMAGE:$IMAGE_TAG \
+                -t $DOCKER_IMAGE:latest \
+                $APP_DIR
+        '''
+    }
+}
+stage('Trivy Docker Scan') {
+    steps {
+        sh '''
+            set -e
+
+            echo "Scanning Docker image: $FULL_IMAGE"
+
+            trivy image \
+                --scanners vuln \
+                --severity HIGH,CRITICAL \
+                --exit-code 1 \
+                --ignore-unfixed \
+                "$FULL_IMAGE"
+        '''
+    }
+}
+
     }
 
     post {
