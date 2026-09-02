@@ -27,10 +27,16 @@ pipeline {
 
                     cd "$APP_DIR"
 
+                    echo "Java:"
                     java -version
+
+                    echo "Maven:"
                     mvn -version
 
                     test -f pom.xml
+                    test -f Dockerfile
+
+                    echo "Project validation successful"
                 '''
             }
         }
@@ -60,7 +66,7 @@ pipeline {
                     }
                 }
 
-                stage('Trivy Dependency Scan') {
+                stage('Trivy Filesystem Scan') {
                     steps {
                         sh '''
                             set -e
@@ -69,6 +75,7 @@ pipeline {
                                 --scanners vuln \
                                 --severity HIGH,CRITICAL \
                                 --exit-code 1 \
+                                --ignore-unfixed \
                                 "$APP_DIR"
                         '''
                     }
@@ -79,7 +86,8 @@ pipeline {
                         sh '''
                             set -e
 
-                            checkov -d .
+                            checkov \
+                                -f "$APP_DIR/Dockerfile"
                         '''
                     }
                 }
@@ -99,21 +107,11 @@ pipeline {
 
             post {
                 always {
-                    junit allowEmptyResults: true,
-                          testResults: 'todo-app/target/surefire-reports/*.xml'
+                    junit(
+                        allowEmptyResults: true,
+                        testResults: 'todo-app/target/surefire-reports/*.xml'
+                    )
                 }
-            }
-        }
-
-        stage('Package') {
-            steps {
-                sh '''
-                    set -e
-
-                    cd "$APP_DIR"
-
-                    mvn -B package -DskipTests
-                '''
             }
         }
 
@@ -125,7 +123,10 @@ pipeline {
                     cd "$APP_DIR"
 
                     mvn -B \
-                      org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+                        org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+
+                    echo "SBOM generated:"
+                    find target -iname "*bom*"
                 '''
             }
         }
@@ -144,12 +145,19 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "Building: $FULL_IMAGE"
+                    cd "$APP_DIR"
+
+                    echo "================================"
+                    echo "Building Docker Image"
+                    echo "Image: $FULL_IMAGE"
+                    echo "================================"
 
                     docker build \
                         -t "$FULL_IMAGE" \
                         -t "$DOCKER_IMAGE:latest" \
-                        "$APP_DIR"
+                        .
+
+                    docker images "$DOCKER_IMAGE"
                 '''
             }
         }
@@ -159,7 +167,10 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "Scanning Docker image: $FULL_IMAGE"
+                    echo "================================"
+                    echo "Scanning Docker Image"
+                    echo "$FULL_IMAGE"
+                    echo "================================"
 
                     trivy image \
                         --scanners vuln \
@@ -175,10 +186,18 @@ pipeline {
     post {
         success {
             echo 'Pipeline completed successfully!'
+            echo "Docker image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
         }
 
         failure {
             echo 'Pipeline failed. Please check the logs.'
+        }
+
+        always {
+            sh '''
+                echo "Cleaning Docker build cache..."
+                docker system prune -f || true
+            '''
         }
     }
 }

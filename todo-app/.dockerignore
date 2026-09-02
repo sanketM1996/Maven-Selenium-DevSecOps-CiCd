@@ -1,0 +1,33 @@
+# Maven
+target/
+.mvn/
+*.log
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Jenkins
+Jenkinsfile
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+
+# Test reports
+surefire-reports/
+failsafe-reports/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
