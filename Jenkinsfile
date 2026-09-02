@@ -276,7 +276,7 @@ stage('Deploy to Docker') {
             echo "Starting new container..."
             docker run -d \
                 --name todo-app \
-                -p 8080:8081 \
+                -p 8081:8080 \
                 "$FULL_IMAGE"
 
             echo "================================"
