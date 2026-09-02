@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         APP_DIR = 'todo-app'
-        DOCKER_IMAGE = 'sanketmahajan/mern-app'
+        DOCKER_IMAGE = 'sanketmahajan/mavenproject'
     }
 
     stages {
