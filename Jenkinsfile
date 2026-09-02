@@ -255,6 +255,38 @@ pipeline {
                 '''
             }
         }
+        // =========================
+// 9. DEPLOY TO DOCKER
+// =========================
+stage('Deploy to Docker') {
+    steps {
+        sh '''
+            set -e
+
+            echo "================================"
+            echo "Deploying Docker Container"
+            echo "================================"
+
+            echo "Stopping existing container..."
+            docker stop todo-app || true
+
+            echo "Removing existing container..."
+            docker rm todo-app || true
+
+            echo "Starting new container..."
+            docker run -d \
+                --name todo-app \
+                -p 8080:8081 \
+                "$FULL_IMAGE"
+
+            echo "================================"
+            echo "Docker Deployment Successful"
+            echo "================================"
+
+            docker ps --filter "name=todo-app"
+        '''
+    }
+}
     }
 
 
