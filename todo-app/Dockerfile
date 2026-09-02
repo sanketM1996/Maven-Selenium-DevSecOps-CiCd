@@ -15,8 +15,16 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
+RUN useradd --system --create-home --uid 1001 appuser
+
 COPY --from=build /app/target/*.jar app.jar
 
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
 EXPOSE 8080
+
+HEALTHCHECK CMD ["java", "-version"]
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
