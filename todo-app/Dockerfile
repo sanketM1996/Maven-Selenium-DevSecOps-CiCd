@@ -1,30 +1,41 @@
+# =========================
+# Build Stage
+# =========================
 FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
 COPY pom.xml .
 
-RUN mvn dependency:go-offline -B
+RUN mvn -B dependency:go-offline
 
 COPY src ./src
 
-RUN mvn clean package -DskipTests -B
+RUN mvn -B clean package -DskipTests
 
 
-FROM eclipse-temurin:21-jre
+# =========================
+# Runtime Stage
+# =========================
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-RUN useradd --system --create-home --uid 1001 appuser
+RUN addgroup -S appgroup && \
+    adduser -S -u 1001 -G appgroup appuser
 
 COPY --from=build /app/target/*.jar app.jar
 
-RUN chown -R appuser:appuser /app
+RUN chown -R appuser:appgroup /app
 
 USER appuser
 
 EXPOSE 8080
 
-HEALTHCHECK CMD ["java", "-version"]
+HEALTHCHECK --interval=30s \
+            --timeout=5s \
+            --start-period=30s \
+            --retries=3 \
+            CMD ["java", "-version"]
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
