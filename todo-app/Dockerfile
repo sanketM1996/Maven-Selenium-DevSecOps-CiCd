@@ -21,6 +21,11 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
+# Update Alpine packages with latest security patches
+RUN apk update && \
+    apk upgrade --no-cache
+
+# Create non-root user
 RUN addgroup -S appgroup && \
     adduser -S -u 1001 -G appgroup appuser
 
