@@ -8,6 +8,7 @@ pipeline {
 
     environment {
         APP_DIR = 'todo-app'
+        DOCKER_IMAGE = 'sanketmahajan/mern-app'
     }
 
     stages {
@@ -28,7 +29,20 @@ pipeline {
 
                     java -version
                     mvn -version
+
                     test -f pom.xml
+                '''
+            }
+        }
+
+        stage('Download Maven Dependencies') {
+            steps {
+                sh '''
+                    set -e
+
+                    cd "$APP_DIR"
+
+                    mvn -B dependency:resolve
                 '''
             }
         }
@@ -85,7 +99,8 @@ pipeline {
 
             post {
                 always {
-                    junit 'todo-app/target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true,
+                          testResults: 'todo-app/target/surefire-reports/*.xml'
                 }
             }
         }
@@ -109,44 +124,52 @@ pipeline {
 
                     cd "$APP_DIR"
 
-                    mvn -B org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+                    mvn -B \
+                      org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
                 '''
             }
         }
+
         stage('Docker Build') {
-    steps {
-        script {
-            env.IMAGE_TAG = sh(
-                script: 'git rev-parse --short=12 HEAD',
-                returnStdout: true
-            ).trim()
+            steps {
+                script {
+                    env.IMAGE_TAG = sh(
+                        script: 'git rev-parse --short=12 HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    env.FULL_IMAGE = "${DOCKER_IMAGE}:${IMAGE_TAG}"
+                }
+
+                sh '''
+                    set -e
+
+                    echo "Building: $FULL_IMAGE"
+
+                    docker build \
+                        -t "$FULL_IMAGE" \
+                        -t "$DOCKER_IMAGE:latest" \
+                        "$APP_DIR"
+                '''
+            }
         }
 
-        sh '''
-            docker build \
-                -t $DOCKER_IMAGE:$IMAGE_TAG \
-                -t $DOCKER_IMAGE:latest \
-                $APP_DIR
-        '''
-    }
-}
-stage('Trivy Docker Scan') {
-    steps {
-        sh '''
-            set -e
+        stage('Trivy Docker Scan') {
+            steps {
+                sh '''
+                    set -e
 
-            echo "Scanning Docker image: $FULL_IMAGE"
+                    echo "Scanning Docker image: $FULL_IMAGE"
 
-            trivy image \
-                --scanners vuln \
-                --severity HIGH,CRITICAL \
-                --exit-code 1 \
-                --ignore-unfixed \
-                "$FULL_IMAGE"
-        '''
-    }
-}
-
+                    trivy image \
+                        --scanners vuln \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 1 \
+                        --ignore-unfixed \
+                        "$FULL_IMAGE"
+                '''
+            }
+        }
     }
 
     post {
